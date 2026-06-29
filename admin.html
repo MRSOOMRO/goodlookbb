@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin | Good Look Browbar</title>
+  <meta name="theme-color" content="#f4e8ec" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <nav class="nav">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Good Look Browbar logo" /></a>
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="products.html">Products</a>
+        <a href="admin.html">Admin</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero reveal">
+      <p class="eyebrow">Admin panel</p>
+      <h1>Manage appointments and product orders.</h1>
+      <p>This is a front-end demo admin panel using browser storage. Connect it to a real database before live business use.</p>
+    </section>
+
+    <section class="section admin-grid">
+      <div class="admin-card reveal">
+        <h2>Add appointment</h2>
+        <form id="appointmentForm" class="admin-form">
+          <input required name="customer" placeholder="Customer name" />
+          <input required name="phone" placeholder="Phone" />
+          <select required name="service">
+            <option value="">Select service</option>
+            <option>Eyebrow Threading</option>
+            <option>Brow Tint</option>
+            <option>Lash Tint</option>
+            <option>Brow Lamination</option>
+            <option>Full Face Threading</option>
+          </select>
+          <input required name="date" type="date" />
+          <input required name="time" type="time" />
+          <select name="status"><option>Booked</option><option>Completed</option><option>Cancelled</option></select>
+          <button class="btn primary" type="submit">Save Appointment</button>
+        </form>
+      </div>
+
+      <div class="admin-card reveal">
+        <h2>Appointments</h2>
+        <div class="table-wrap"><table><thead><tr><th>Customer</th><th>Service</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="appointmentRows"></tbody></table></div>
+      </div>
+
+      <div class="admin-card reveal wide">
+        <h2>Product orders</h2>
+        <div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead><tbody id="orderRows"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <img src="assets/logo.png" alt="Good Look Browbar logo" />
+    <p>© <span id="year"></span> Good Look Browbar. All rights reserved.</p>
+  </footer>
+
+  <script src="script.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
