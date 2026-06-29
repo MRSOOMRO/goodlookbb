@@ -1,5 +1,5 @@
-const GLB_DB_KEY = 'glb_database_v4';
-const GLB_SESSION_KEY = 'glb_admin_session_v4';
+const GLB_DB_KEY = 'glb_database_v5';
+const GLB_SESSION_KEY = 'glb_admin_session_v5';
 
 const placeholderProduct = `data:image/svg+xml;utf8,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">
@@ -65,6 +65,6 @@ function readFileAsDataUrl(file) {
   });
 }
 function productPrice(product) { return Number(product.offerPrice || product.price || 0); }
-function cartItems() { return JSON.parse(localStorage.getItem('glb_cart_v4') || '[]'); }
-function saveCart(items) { localStorage.setItem('glb_cart_v4', JSON.stringify(items)); }
+function cartItems() { return JSON.parse(localStorage.getItem('glb_cart_v5') || '[]'); }
+function saveCart(items) { localStorage.setItem('glb_cart_v5', JSON.stringify(items)); }
 function cartCount() { return cartItems().reduce((sum, item) => sum + Number(item.qty || 0), 0); }
