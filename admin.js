@@ -1,128 +1,36 @@
-const sampleAppointments = [
-  { customer:'Aisha Khan', phone:'07123 000111', service:'Eyebrow Threading', date:'2026-07-02', time:'10:30', status:'Booked' },
-  { customer:'Sarah Jones', phone:'07123 000222', service:'Brow Lamination', date:'2026-07-03', time:'14:00', status:'Booked' }
-];
-
-function showDashboard(){
-  document.getElementById('loginPanel')?.classList.add('hidden');
-  document.getElementById('adminDashboard')?.classList.remove('hidden');
-  renderProductsAdmin();
-  renderAppointments();
-  renderOrders();
-}
-function showLogin(){
-  document.getElementById('loginPanel')?.classList.remove('hidden');
-  document.getElementById('adminDashboard')?.classList.add('hidden');
-}
-
-if(isLoggedIn()) showDashboard(); else showLogin();
-
-document.getElementById('loginForm')?.addEventListener('submit', e => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target).entries());
-  if(data.username === 'admin' && data.password === 'GLB2026'){
-    localStorage.setItem(GLB_ADMIN_KEY, 'yes');
-    showDashboard();
-    e.target.reset();
-  } else {
-    document.getElementById('loginMessage').textContent = 'Incorrect username or password.';
-  }
-});
-
-document.getElementById('logoutBtn')?.addEventListener('click', () => {
-  localStorage.removeItem(GLB_ADMIN_KEY);
-  showLogin();
-});
-
-function renderProductsAdmin(){
-  const body = document.getElementById('productRows');
-  if(!body) return;
-  const products = getProducts();
-  body.innerHTML = products.map((p,i)=>`<tr><td><strong>${p.name}</strong><br><small>${p.desc}</small></td><td>${money(p.price)}</td><td>${p.offerPrice !== '' ? money(p.offerPrice) : '-'}</td><td>${p.stock}</td><td><span class="pill">${p.active !== false ? 'Visible' : 'Hidden'}</span></td><td><button class="table-btn" onclick="editProduct(${i})">Edit</button> <button class="table-btn" onclick="deleteProduct(${i})">Delete</button></td></tr>`).join('');
-}
-
-function editProduct(i){
-  const products = getProducts();
-  const p = products[i];
-  const form = document.getElementById('productForm');
-  form.elements.id.value = p.id;
-  form.elements.name.value = p.name;
-  form.elements.desc.value = p.desc;
-  form.elements.price.value = p.price;
-  form.elements.offerPrice.value = p.offerPrice || '';
-  form.elements.stock.value = p.stock;
-  form.elements.active.checked = p.active !== false;
-  document.getElementById('productFormTitle').textContent = 'Edit product';
-  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-function deleteProduct(i){
-  const products = getProducts();
-  products.splice(i,1);
-  saveProducts(products);
-  renderProductsAdmin();
-}
-function resetProductForm(){
-  const form = document.getElementById('productForm');
-  form.reset();
-  form.elements.id.value = '';
-  form.elements.active.checked = true;
-  document.getElementById('productFormTitle').textContent = 'Add product';
-}
-
-document.getElementById('resetProductForm')?.addEventListener('click', resetProductForm);
-
-document.getElementById('productForm')?.addEventListener('submit', e => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target).entries());
-  const products = getProducts();
-  const item = {
-    id: data.id ? Number(data.id) : Date.now(),
-    name: data.name.trim(),
-    desc: data.desc.trim(),
-    price: Number(data.price),
-    offerPrice: data.offerPrice === '' ? '' : Number(data.offerPrice),
-    stock: Number(data.stock),
-    active: data.active === 'on'
-  };
-  const index = products.findIndex(p => Number(p.id) === Number(item.id));
-  if(index >= 0) products[index] = item;
-  else products.unshift(item);
-  saveProducts(products);
-  resetProductForm();
-  renderProductsAdmin();
-});
-
-function loadAppointments(){
-  let items = readJson('glb_appointments', null);
-  if(!items){ items = sampleAppointments; writeJson('glb_appointments', items); }
-  return items;
-}
-function saveAppointments(items){ writeJson('glb_appointments', items); }
-
-function renderAppointments(){
-  const body = document.getElementById('appointmentRows');
-  if(!body) return;
-  const items = loadAppointments();
-  body.innerHTML = items.map((a,i)=>`<tr><td>${a.customer}<br><small>${a.phone}</small></td><td>${a.service}</td><td>${a.date}<br><small>${a.time}</small></td><td><span class="pill">${a.status}</span></td><td><button class="table-btn" onclick="deleteAppointment(${i})">Delete</button></td></tr>`).join('');
-}
-function deleteAppointment(i){ const items=loadAppointments(); items.splice(i,1); saveAppointments(items); renderAppointments(); }
-
-document.getElementById('appointmentForm')?.addEventListener('submit', e => {
-  e.preventDefault();
-  const item = Object.fromEntries(new FormData(e.target).entries());
-  const items = loadAppointments();
-  items.unshift(item);
-  saveAppointments(items);
-  e.target.reset();
-  renderAppointments();
-});
-
-function renderOrders(){
-  const body = document.getElementById('orderRows');
-  if(!body) return;
-  const orders = getOrders();
-  if(!orders.length){ body.innerHTML = '<tr><td colspan="7">No product orders yet. Place a test order from the products page.</td></tr>'; return; }
-  body.innerHTML = orders.map((o,i)=>`<tr><td>${o.id}<br><small>${o.created}</small></td><td>${o.customer}<br><small>${o.phone}</small></td><td>${o.items.map(x=>`${x.name} x ${x.qty}`).join('<br>')}</td><td>${money(o.total)}</td><td>${o.payment}</td><td><select onchange="updateOrderStatus(${i}, this.value)"><option ${o.status==='Pending Payment'?'selected':''}>Pending Payment</option><option ${o.status==='Paid'?'selected':''}>Paid</option><option ${o.status==='Dispatched'?'selected':''}>Dispatched</option><option ${o.status==='Cancelled'?'selected':''}>Cancelled</option></select></td><td><button class="table-btn" onclick="deleteOrder(${i})">Delete</button></td></tr>`).join('');
-}
-function updateOrderStatus(i,status){ const orders=getOrders(); orders[i].status=status; saveOrders(orders); renderOrders(); }
-function deleteOrder(i){ const orders=getOrders(); orders.splice(i,1); saveOrders(orders); renderOrders(); }
+let db = getDb();
+const pages = {dashboard:['Dashboard','Manage your salon website.'],products:['Products','Add, edit and hide shop products.'],'add-product':['Add product','Create or edit product details, price, stock and images.'],orders:['Orders','Manage customer product orders.'],appointments:['Appointments','Manage booking requests and appointments.'],services:['Services','Manage services and placeholder images.'],settings:['Settings','Bank transfer, coupon and database tools.']};
+const loginScreen=document.getElementById('loginScreen'),adminApp=document.getElementById('adminApp');
+function openAdmin(){loginScreen.classList.add('hidden');adminApp.classList.remove('hidden');renderAll();route();}
+function closeAdmin(){setAdminLoggedIn(false);location.reload();}
+if(isAdminLoggedIn())openAdmin();
+document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.target);if(f.get('username')==='admin'&&f.get('password')==='GLB2026'){setAdminLoggedIn(true);e.target.reset();openAdmin();}else document.getElementById('loginError').textContent='Wrong username or password.';});
+document.getElementById('logoutBtn').onclick=closeAdmin;
+function route(){const key=(location.hash||'#dashboard').slice(1);document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===key));document.querySelectorAll('.side-link').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+key));document.getElementById('pageTitle').textContent=(pages[key]||pages.dashboard)[0];document.getElementById('pageSub').textContent=(pages[key]||pages.dashboard)[1];}
+window.addEventListener('hashchange',route);
+function renderAll(){db=getDb();renderStats();renderProducts();renderOrders();renderAppointments();renderServices();renderSettings();}
+function renderStats(){statProducts.textContent=db.products.length;statOrders.textContent=db.orders.length;statAppointments.textContent=db.appointments.length;statStock.textContent=db.products.reduce((s,p)=>s+Number(p.stock||0),0);dashOrders.innerHTML=db.orders.slice(0,5).map(o=>`<tr><td>${o.id}</td><td>${o.customer}</td><td>${money(o.total)}</td><td><span class="pill">${o.status}</span></td></tr>`).join('')||'<tr><td>No orders yet.</td></tr>';dashAppointments.innerHTML=db.appointments.slice(0,5).map(a=>`<tr><td>${a.customer}</td><td>${a.service}</td><td>${a.date} ${a.time}</td><td><span class="pill">${a.status}</span></td></tr>`).join('');}
+function renderProducts(){productsTable.innerHTML=db.products.map(p=>`<tr><td><img class="thumb" src="${p.image||placeholderProduct}"></td><td><b>${p.name}</b><br><span class="admin-small">${p.description}</span></td><td>${money(p.price)}</td><td>${p.offerPrice?money(p.offerPrice):'-'}</td><td>${p.stock}</td><td><span class="pill">${p.visible?'Visible':'Hidden'}</span></td><td class="actions"><button class="icon-btn" onclick="editProduct('${p.id}')">Edit</button><button class="icon-btn" onclick="toggleProduct('${p.id}')">${p.visible?'Hide':'Show'}</button><button class="icon-btn dark" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>`).join('');}
+function editProduct(id){const p=db.products.find(x=>x.id===id);const f=productForm;f.id.value=p.id;f.name.value=p.name;f.description.value=p.description;f.price.value=p.price;f.offerPrice.value=p.offerPrice;f.stock.value=p.stock;f.visible.checked=p.visible;productPreview.src=p.image||placeholderProduct;productFormTitle.textContent='Edit product';location.hash='add-product';}
+function toggleProduct(id){const p=db.products.find(x=>x.id===id);p.visible=!p.visible;saveDb(db);renderAll();}
+function deleteProduct(id){if(confirm('Delete this product?')){db.products=db.products.filter(p=>p.id!==id);saveDb(db);renderAll();}}
+productForm.image.addEventListener('change',async e=>{productPreview.src=await readFileAsDataUrl(e.target.files[0])||placeholderProduct;});
+productForm.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(productForm);let image=productPreview.src||placeholderProduct;const file=productForm.image.files[0];if(file) image=await readFileAsDataUrl(file);const item={id:f.get('id')||uid('p'),name:f.get('name'),description:f.get('description'),price:Number(f.get('price')),offerPrice:f.get('offerPrice')?Number(f.get('offerPrice')):'',stock:Number(f.get('stock')),image,visible:productForm.visible.checked};const i=db.products.findIndex(p=>p.id===item.id);i>=0?db.products[i]=item:db.products.unshift(item);saveDb(db);clearProduct();renderAll();location.hash='products';});
+function clearProduct(){productForm.reset();productForm.id.value='';productPreview.src=placeholderProduct;productFormTitle.textContent='Add product';productForm.visible.checked=true;} clearProductForm.onclick=clearProduct;productPreview.src=placeholderProduct;
+function renderOrders(){ordersTable.innerHTML=db.orders.map(o=>`<tr><td><b>${o.id}</b><br><span class="admin-small">${o.date||''}</span></td><td>${o.customer}<br><span class="admin-small">${o.phone}<br>${o.email||''}</span></td><td>${o.items.map(i=>`${i.qty} x ${i.name}`).join('<br>')}</td><td>${money(o.total)}<br><span class="admin-small">Discount ${money(o.discount||0)}</span></td><td>${o.payment}</td><td><select onchange="updateOrderStatus('${o.id}',this.value)">${['Pending payment','Paid','Processing','Completed','Cancelled'].map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}</select></td><td><button class="icon-btn dark" onclick="deleteOrder('${o.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7">No product orders yet.</td></tr>';}
+function updateOrderStatus(id,status){const o=db.orders.find(x=>x.id===id);o.status=status;saveDb(db);renderAll();}
+function deleteOrder(id){if(confirm('Delete order?')){db.orders=db.orders.filter(o=>o.id!==id);saveDb(db);renderAll();}}
+function renderAppointments(){appointmentService.innerHTML=db.services.map(s=>`<option>${s.name}</option>`).join('');appointmentsTable.innerHTML=db.appointments.map(a=>`<tr><td>${a.customer}<br><span class="admin-small">${a.phone}</span></td><td>${a.service}</td><td>${a.date}<br>${a.time}</td><td><select onchange="updateAppointmentStatus('${a.id}',this.value)">${['Requested','Booked','Completed','Cancelled'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}</select></td><td><button class="icon-btn dark" onclick="deleteAppointment('${a.id}')">Delete</button></td></tr>`).join('');}
+appointmentForm.addEventListener('submit',e=>{e.preventDefault();const f=new FormData(appointmentForm);db.appointments.unshift({id:uid('a'),customer:f.get('customer'),phone:f.get('phone'),service:f.get('service'),date:f.get('date'),time:f.get('time'),status:f.get('status')});saveDb(db);appointmentForm.reset();renderAll();});
+function updateAppointmentStatus(id,status){const a=db.appointments.find(x=>x.id===id);a.status=status;saveDb(db);renderAll();}
+function deleteAppointment(id){if(confirm('Delete appointment?')){db.appointments=db.appointments.filter(a=>a.id!==id);saveDb(db);renderAll();}}
+function renderServices(){servicesTable.innerHTML=db.services.map(s=>`<tr><td><img class="thumb" src="${s.image||placeholderService}"></td><td><b>${s.name}</b><br><span class="admin-small">${s.description}</span></td><td>${money(s.price)}<br><span class="admin-small">${s.duration}</span></td><td class="actions"><button class="icon-btn" onclick="editService('${s.id}')">Edit</button><button class="icon-btn dark" onclick="deleteService('${s.id}')">Delete</button></td></tr>`).join('');}
+serviceForm.image.addEventListener('change',async e=>{servicePreview.src=await readFileAsDataUrl(e.target.files[0])||placeholderService;});
+function editService(id){const s=db.services.find(x=>x.id===id);serviceForm.id.value=s.id;serviceForm.name.value=s.name;serviceForm.description.value=s.description;serviceForm.price.value=s.price;serviceForm.duration.value=s.duration;serviceForm.visible.checked=s.visible;servicePreview.src=s.image||placeholderService;}
+serviceForm.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(serviceForm);let image=servicePreview.src||placeholderService;const file=serviceForm.image.files[0];if(file) image=await readFileAsDataUrl(file);const item={id:f.get('id')||uid('s'),name:f.get('name'),description:f.get('description'),price:Number(f.get('price')),duration:f.get('duration'),image,visible:serviceForm.visible.checked};const i=db.services.findIndex(s=>s.id===item.id);i>=0?db.services[i]=item:db.services.unshift(item);saveDb(db);serviceForm.reset();servicePreview.src=placeholderService;renderAll();});
+function deleteService(id){if(confirm('Delete service?')){db.services=db.services.filter(s=>s.id!==id);saveDb(db);renderAll();}}
+servicePreview.src=placeholderService;
+function renderSettings(){Object.keys(db.settings).forEach(k=>{if(settingsForm[k])settingsForm[k].value=db.settings[k]});}
+settingsForm.addEventListener('submit',e=>{e.preventDefault();const f=new FormData(settingsForm);db.settings={bankName:f.get('bankName'),sortCode:f.get('sortCode'),accountNumber:f.get('accountNumber'),referenceText:f.get('referenceText'),couponCode:f.get('couponCode'),couponPercent:Number(f.get('couponPercent'))};saveDb(db);alert('Settings saved');});
+function downloadJson(){const blob=new Blob([JSON.stringify(getDb(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='good-look-browbar-database.json';a.click();}
+exportBtn.onclick=downloadJson;downloadDb.onclick=downloadJson;importDb.addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{saveDb(JSON.parse(reader.result));renderAll();alert('Database imported');}catch{alert('Invalid JSON file')}};reader.readAsText(file);});
