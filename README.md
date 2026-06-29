@@ -1,6 +1,6 @@
-Good Look Browbar Website v4
+Good Look Browbar Website
 
-Upload the contents of this folder to your GitHub Pages repo.
+Upload all files and folders to your GitHub Pages repository root.
 Do not upload the ZIP file itself.
 
 Pages:
@@ -13,19 +13,14 @@ Admin login:
 Username: admin
 Password: GLB2026
 
-Admin dashboard includes:
-Dashboard overview
-Manage products
-Add and edit products
-Upload product images
-Manage orders
-Manage appointments
-Manage services
-Upload service images
-Bank transfer and coupon settings
-Export and import browser database JSON
+Coupon:
+GL10 gives 10% off.
 
-Important:
-This version is static and works on GitHub Pages.
-It uses browser localStorage as the database.
-For a real private database shared between devices, use Firebase, Supabase, WooCommerce, Shopify, or a custom backend.
+Data storage:
+This version uses browser localStorage as a front end demo database.
+Products, services, appointments and orders are saved in the same browser.
+For a real live business backend later, connect Firebase, Supabase, Shopify, WooCommerce, WordPress or another database.
+
+Image uploads:
+Admin product image upload stores images in browser localStorage as data URLs.
+Dummy products use assets/placeholder.png.
