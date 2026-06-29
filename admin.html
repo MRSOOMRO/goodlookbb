@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin | Good Look Browbar</title>
+  <title>Admin Login | Good Look Browbar</title>
   <meta name="theme-color" content="#f4e8ec" />
+  <meta name="robots" content="noindex,nofollow" />
   <link rel="icon" href="assets/logo.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,19 +17,57 @@
       <div class="nav-links" id="navLinks">
         <a href="index.html">Home</a>
         <a href="products.html">Products</a>
-        <a href="admin.html">Admin</a>
       </div>
     </nav>
   </header>
 
   <main>
     <section class="page-hero reveal">
-      <p class="eyebrow">Admin panel</p>
-      <h1>Manage appointments and product orders.</h1>
-      <p>This is a front-end demo admin panel using browser storage. Connect it to a real database before live business use.</p>
+      <p class="eyebrow">Private admin</p>
+      <h1>Manage your shop and bookings.</h1>
+      <p>Login is required before the admin dashboard opens.</p>
     </section>
 
-    <section class="section admin-grid">
+    <section class="section admin-login" id="loginPanel">
+      <form class="contact-form login-box reveal" id="loginForm">
+        <h2>Admin login</h2>
+        <input required name="username" placeholder="Username" autocomplete="username" />
+        <input required name="password" type="password" placeholder="Password" autocomplete="current-password" />
+        <button class="btn primary full" type="submit">Login</button>
+        <p class="coupon-help">Demo login: admin / GLB2026</p>
+        <p id="loginMessage" class="form-message"></p>
+      </form>
+    </section>
+
+    <section class="section admin-grid hidden" id="adminDashboard">
+      <div class="admin-toolbar wide reveal">
+        <div>
+          <p class="section-tag">Admin dashboard</p>
+          <h2>Products, appointments and orders</h2>
+        </div>
+        <button class="btn secondary" id="logoutBtn" type="button">Logout</button>
+      </div>
+
+      <div class="admin-card reveal">
+        <h2 id="productFormTitle">Add product</h2>
+        <form id="productForm" class="admin-form">
+          <input type="hidden" name="id" />
+          <input required name="name" placeholder="Product name" />
+          <textarea required name="desc" placeholder="Product description"></textarea>
+          <input required name="price" type="number" min="0" step="0.01" placeholder="Normal price" />
+          <input name="offerPrice" type="number" min="0" step="0.01" placeholder="Offer price, optional" />
+          <input required name="stock" type="number" min="0" step="1" placeholder="Stock quantity" />
+          <label class="agree"><input name="active" type="checkbox" checked /> Show product on website</label>
+          <button class="btn primary" type="submit">Save Product</button>
+          <button class="btn secondary" id="resetProductForm" type="button">Clear Form</button>
+        </form>
+      </div>
+
+      <div class="admin-card reveal">
+        <h2>Products</h2>
+        <div class="table-wrap"><table><thead><tr><th>Product</th><th>Price</th><th>Offer</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="productRows"></tbody></table></div>
+      </div>
+
       <div class="admin-card reveal">
         <h2>Add appointment</h2>
         <form id="appointmentForm" class="admin-form">
@@ -66,6 +105,7 @@
     <p>© <span id="year"></span> Good Look Browbar. All rights reserved.</p>
   </footer>
 
+  <script src="store.js"></script>
   <script src="script.js"></script>
   <script src="admin.js"></script>
 </body>

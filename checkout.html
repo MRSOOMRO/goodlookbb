@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout | Good Look Browbar</title>
+  <meta name="theme-color" content="#f4e8ec" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <nav class="nav">
+      <a class="brand" href="index.html"><img src="assets/logo.png" alt="Good Look Browbar logo" /></a>
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="products.html">Products</a>
+        <a href="index.html#contact">Contact</a>
+        <a class="nav-cta" href="index.html#booking">Book Now</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero reveal">
+      <p class="eyebrow">Checkout</p>
+      <h1>Complete your product order.</h1>
+      <p>Payment is set to bank transfer for now. A payment gateway can be added later.</p>
+    </section>
+
+    <section class="section checkout-page">
+      <div class="cart-panel reveal">
+        <h2>Order summary</h2>
+        <div id="cartItems" class="cart-items"></div>
+        <div class="coupon-row">
+          <input id="couponCode" type="text" placeholder="Coupon code" />
+          <button class="btn secondary small" id="applyCoupon" type="button">Apply</button>
+        </div>
+        <p class="coupon-help">Try GL10 for 10% off.</p>
+        <div class="cart-totals">
+          <div><span>Subtotal</span><strong id="subtotal">£0.00</strong></div>
+          <div><span>Discount</span><strong id="discount">£0.00</strong></div>
+          <div><span>Total</span><strong id="total">£0.00</strong></div>
+        </div>
+      </div>
+
+      <form class="checkout-form contact-form reveal" id="checkoutForm">
+        <h2>Customer details</h2>
+        <input required name="name" type="text" placeholder="Full name" />
+        <input required name="email" type="email" placeholder="Email address" />
+        <input required name="phone" type="tel" placeholder="Phone number" />
+        <textarea required name="address" placeholder="Delivery address"></textarea>
+        <div class="bank-box">
+          <strong>Bank transfer payment</strong>
+          <p>Account Name: Good Look Browbar</p>
+          <p>Sort Code: 00-00-00</p>
+          <p>Account No: 00000000</p>
+          <p>Reference: Your order number</p>
+        </div>
+        <label class="agree"><input required type="checkbox" /> I agree to the terms and conditions.</label>
+        <button class="btn primary full" type="submit">Place Order</button>
+        <p id="checkoutMessage" class="form-message"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <img src="assets/logo.png" alt="Good Look Browbar logo" />
+    <p>© <span id="year"></span> Good Look Browbar. All rights reserved.</p>
+  </footer>
+
+  <script src="store.js"></script>
+  <script src="script.js"></script>
+  <script src="checkout.js"></script>
+</body>
+</html>
