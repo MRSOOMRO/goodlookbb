@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Deployment Board v11</title>
+<style>
+:root{
+  --bg:#eaf3fb;
+  --ink:#0f172a;
+  --muted:#475569;
+  --blue:#176fc7;
+  --blueDark:#0b4f99;
+  --track:#111;
+  --line:#d7e6f7;
+  --orange:#f59e0b;
+  --green:#15803d;
+  --red:#dc2626;
+  --badgeBlue:#69c7ee;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--ink)}
+button,input,select,textarea{font-family:inherit}
+#app{width:100vw;height:100vh;display:grid;grid-template-columns:1fr 292px;gap:10px;padding:10px;background:radial-gradient(circle at top left,#fff 0,#e7f3ff 45%,#edf5fc 100%)}
+#app.pool-collapsed{grid-template-columns:1fr 0px}#app.pool-collapsed #sidePanel{transform:translateX(305px);pointer-events:none}#restorePoolBtn{position:fixed;right:14px;top:88px;z-index:90;width:42px;height:42px;border:0;border-radius:999px;background:#0b6fd3;color:white;font-weight:900;font-size:20px;box-shadow:0 12px 28px rgba(16,24,40,.25);cursor:pointer;display:none}#app.pool-collapsed + #restorePoolBtn{display:block}
+#boardShell{position:relative;background:#fff;border:1px solid #cfe1f5;border-radius:14px;overflow:auto;box-shadow:0 12px 30px rgba(16,24,40,.10)}
+#stage{position:relative;width:1600px;height:900px;background:linear-gradient(90deg,rgba(209,225,245,.55) 1px,transparent 1px),linear-gradient(0deg,rgba(209,225,245,.55) 1px,transparent 1px),#fff;background-size:40px 40px;overflow:hidden}
+.board-title{position:absolute;left:305px;top:16px;width:1020px;text-align:center;font-size:38px;letter-spacing:7px;font-weight:500;color:#4a78be;text-shadow:1px 2px 4px rgba(0,0,0,.22);white-space:nowrap;line-height:1}
+.box-label{position:absolute;background:#fff;border:2px solid #111;color:#111;font-size:12px;font-weight:900;text-align:center;display:flex;align-items:center;justify-content:center;text-transform:uppercase;line-height:1.05;z-index:2}
+.track{position:absolute;background:#111;border-radius:3px;z-index:1;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.track.vertical{width:12px}.track.horizontal{height:12px}
+.track.yellow{background:#f7c51d}.track.green{background:#65a845}.track.blue{background:#5fa7da}.track.missing{box-shadow:0 0 0 4px rgba(245,158,11,.32),inset 0 0 0 1px rgba(255,255,255,.16)}
+.track.covered{box-shadow:0 0 0 4px rgba(22,163,74,.22),inset 0 0 0 1px rgba(255,255,255,.16)}
+.mini-table{position:absolute;border:1px solid #111;background:#fff;display:grid;grid-template-columns:70px 58px 64px 58px 70px;grid-auto-rows:18px;font-size:8px;font-weight:900;text-align:center;z-index:2}
+.mini-table div{border:1px solid #111;display:flex;align-items:center;justify-content:center;line-height:1.05;text-transform:uppercase}.mini-table .big{font-size:20px}.mini-table .a{color:#d97706;background:#fff3dd}.mini-table .b{color:#16a34a;background:#e8ffe8}.mini-table .cd{color:#2563eb;background:#eaf2ff;font-size:13px}.mini-table .small{font-size:7px}.mini-table .orange{color:#f97316}.mini-table .greenText{color:#16a34a}.mini-table .blueText{color:#2563eb}
+.vert-name{position:absolute;writing-mode:vertical-rl;text-orientation:mixed;font-size:14px;font-weight:900;letter-spacing:.6px;color:#111;z-index:2;pointer-events:none}
+.drop-zone{position:absolute;border:2px dashed transparent;border-radius:12px;z-index:4}.drop-zone.hover{border-color:#22c55e;background:rgba(34,197,94,.10)}.drop-zone.disabled{background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.36)}
+.cover-chip{position:absolute;z-index:8;font-size:7px;font-weight:900;border-radius:999px;padding:1px 4px;pointer-events:none;box-shadow:0 3px 7px rgba(16,24,40,.08);max-width:64px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cover-chip.missing{background:#fff7ed;color:#9a3412;border:1px solid #fb923c}.cover-chip.covered{background:#f0fdf4;color:#166534;border:1px solid #86efac}
+.badge{position:absolute;width:52px;height:72px;border-radius:10px;background:#69c7ee;border:2px solid #1f2937;box-shadow:0 10px 18px rgba(16,24,40,.28);overflow:hidden;cursor:grab;user-select:none;touch-action:none;z-index:30;transform-origin:center center}.badge.dragging{opacity:.88;cursor:grabbing;z-index:999;filter:drop-shadow(0 18px 22px rgba(0,0,0,.3))}.badge img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}.badge .placeholder{position:absolute;inset:0;background:#69c7ee;display:grid;grid-template-rows:17px 1fr 16px;pointer-events:none;color:#081120}.ph-user{text-align:center;font-size:8px;font-weight:900;padding-top:5px}.ph-name{display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:900;padding:2px}.ph-code{margin:0 8px 5px;background:repeating-linear-gradient(90deg,#000 0 2px,#fff 2px 4px,#000 4px 5px,#fff 5px 8px);border-radius:2px}.badge-note{position:absolute;left:4px;right:4px;bottom:3px;min-height:14px;background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.25);border-radius:4px;color:#111;font-size:8px;font-weight:900;text-align:center;line-height:12px;padding:1px 2px;z-index:4;cursor:text;outline:none}.badge.note-empty .badge-note{color:#94a3b8}.pool-badge{position:relative!important;left:auto!important;top:auto!important;width:76px;height:114px;flex:0 0 auto;box-shadow:0 6px 14px rgba(16,24,40,.20)}.pool-badge .badge-note{display:none}
+#sidePanel{background:#f8fbff;border:1px solid #cfe1f5;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 30px rgba(16,24,40,.10)}
+.side-head{height:52px;background:#0b1220;color:#fff;display:flex;align-items:center;padding:0 12px;gap:10px}.side-title{font-weight:900;font-size:15px;letter-spacing:.5px;margin-right:auto}.side-head button{width:38px;height:38px;border:0;border-radius:999px;background:#176fc7;color:#fff;font-size:19px;font-weight:900;cursor:pointer}.tabs{height:46px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:8px;background:#f1f7ff;border-bottom:1px solid #d7e6f7}.tab{border:1px solid #b8d4f5;background:#fff;border-radius:8px;font-weight:900;color:#0f172a;cursor:pointer}.tab.active{background:#176fc7;color:#fff;border-color:#176fc7}.pool-search{padding:8px;border-bottom:1px solid #d7e6f7}.pool-search input{width:100%;height:34px;border:1px solid #cbdff6;border-radius:9px;padding:0 10px;font-weight:800}.pool-count{font-size:11px;font-weight:900;color:#475569;padding:0 8px 7px}.pool-list{flex:1;min-height:0;overflow:auto;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start;background:#f8fbff}.pool-slot{min-height:126px;border:1px dashed #c3dbf6;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;padding:6px}.pool-slot.hover{outline:3px solid #22c55e;background:#f0fdf4}
+#menuPanel{position:fixed;right:318px;top:18px;width:380px;max-height:calc(100vh - 36px);overflow:auto;background:#fff;border:1px solid #bfd6f2;border-radius:18px;box-shadow:0 20px 55px rgba(16,24,40,.25);z-index:80;display:none;padding:14px}#menuPanel.open{display:block}.menu-title{font-size:17px;font-weight:900;color:#0b5f9e;margin-bottom:7px}.menu-help{font-size:12px;font-weight:700;color:#52677f;line-height:1.4;margin-bottom:10px}.menu-row{display:grid;gap:8px;margin-bottom:9px}.menu-row.two{grid-template-columns:1fr 1fr}.menu-btn{height:38px;border:0;border-radius:11px;background:#176fc7;color:#fff;font-weight:900;cursor:pointer}.menu-btn.secondary{background:#334155}.menu-btn.danger{background:#dc2626}.menu-btn.green{background:#16a34a}.menu-input,.menu-select,.paste-box{width:100%;border:1px solid #cbdff6;border-radius:11px;font-weight:800;outline:none}.menu-input,.menu-select{height:38px;padding:0 10px}.paste-box{height:150px;padding:10px;resize:vertical;font-size:12px}.status{font-size:12px;font-weight:900;color:#334155;line-height:1.4;padding:8px;background:#f1f7ff;border:1px solid #d7e6f7;border-radius:10px;white-space:pre-wrap;max-height:120px;overflow:auto}.hidden{display:none!important}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.52);display:none;align-items:center;justify-content:center;z-index:100}.modal.open{display:flex}.modal-box{width:min(1100px,calc(100vw - 40px));height:min(760px,calc(100vh - 40px));background:#fff;border-radius:20px;border:1px solid #bfd6f2;box-shadow:0 24px 70px rgba(16,24,40,.32);display:flex;flex-direction:column;overflow:hidden}.modal-head{height:58px;display:flex;align-items:center;gap:10px;background:#0b5fb8;color:#fff;padding:0 14px}.modal-title{font-size:18px;font-weight:900}.modal-head input{height:34px;min-width:260px;border:0;border-radius:999px;padding:0 12px;font-weight:800;margin-left:auto}.modal-head button{height:34px;border:0;border-radius:10px;background:#fff;color:#0b5fb8;font-weight:900;padding:0 12px;cursor:pointer}.modal-body{flex:1;min-height:0;overflow:auto;background:#f7fbff;padding:14px}.all-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px}.all-card{background:#fff;border:1px solid #d6e4f5;border-radius:14px;padding:8px;text-align:center;box-shadow:0 6px 14px rgba(16,24,40,.06)}.all-card img{width:70px;height:104px;object-fit:cover;border-radius:9px;border:1px solid #111}.all-name{font-size:11px;font-weight:900;margin:5px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.all-card button{height:28px;width:100%;border:0;border-radius:8px;background:#0b6fd3;color:#fff;font-size:11px;font-weight:900;cursor:pointer;margin-top:5px}.all-card button.remove{background:#dc2626}.cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.cfg-card{background:#fff;border:1px solid #d6e4f5;border-radius:14px;padding:12px}.cfg-title{font-size:14px;font-weight:900;color:#0b5f9e}.cfg-card label{display:block;font-size:12px;font-weight:900;color:#344054;margin:8px 0 4px}.cfg-card input[type=text]{width:100%;height:34px;border:1px solid #cbdff6;border-radius:10px;padding:0 9px;font-weight:800}.cfg-card input[type=checkbox]{transform:scale(1.15)}
+.ctx-menu{position:fixed;z-index:150;background:#fff;border:1px solid #cbd5e1;border-radius:12px;box-shadow:0 18px 50px rgba(15,23,42,.22);padding:6px;display:none;min-width:190px}.ctx-menu.open{display:block}.ctx-menu button{display:block;width:100%;border:0;background:#fff;text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:800}.ctx-menu button:hover{background:#eff6ff}.ctx-menu button.danger{color:#dc2626}
+.exporting #stage{transform:none!important}.exporting .drop-zone,.exporting .cover-chip{display:none!important}.exporting #stage{box-shadow:none!important;border:0!important}.exporting .badge{box-shadow:0 6px 12px rgba(0,0,0,.18)!important}
+@media(max-width:1200px){#app{grid-template-columns:1fr 260px}.pool-list{grid-template-columns:1fr}#menuPanel{right:286px;width:330px}.board-title{left:330px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="boardShell"><div id="stage"></div></div>
+  <aside id="sidePanel">
+    <div class="side-head"><div class="side-title">UNASSIGNED TODAY</div><button id="collapsePoolBtn" title="Hide pool">‹</button><button id="menuButton">☰</button></div>
+    <div class="tabs"><button class="tab active" data-shift="NS1">NS1</button><button class="tab" data-shift="NS2">NS2</button><button class="tab" data-shift="NS3">NS3</button></div>
+    <div class="pool-search"><input id="poolSearch" placeholder="Search unassigned badges"></div>
+    <div class="pool-count" id="poolCount">0 badges</div>
+    <div class="pool-list" id="poolList"></div>
+  </aside>
+</div>
+
+<button id="restorePoolBtn" title="Show unassigned pool">☰</button>
+<div id="menuPanel">
+  <div class="menu-title">Board Menu</div>
+  <div class="menu-help">Import badge images once into All Badges. Then bulk add today's NS1, NS2, or NS3 list to Unassigned Today.</div>
+  <div class="menu-row two"><button class="menu-btn" id="openAllBtn">All Badges</button><button class="menu-btn secondary" id="configBtn">Board Config</button></div>
+  <div class="menu-row two"><button class="menu-btn green" id="importBadgeBtn">Import Badge Images</button><button class="menu-btn" id="exportPngBtn">Export Board PNG</button></div>
+  <input type="file" id="badgeFileInput" class="hidden" accept="image/png,image/jpeg,image/webp" multiple>
+  <div class="menu-row two"><button class="menu-btn secondary" id="saveJsonBtn">Export JSON</button><button class="menu-btn secondary" id="loadJsonBtn">Import JSON</button></div>
+  <input type="file" id="jsonInput" class="hidden" accept="application/json">
+  <div class="menu-row"><select id="bulkShift" class="menu-select"><option>NS1</option><option>NS2</option><option>NS3</option></select><textarea id="bulkPaste" class="paste-box" placeholder="Paste Excel list here, one name per line. Example: Bennett, Jay"></textarea><button class="menu-btn" id="bulkAddBtn">Add pasted list to selected shift</button><div class="status" id="bulkStatus">Ready.</div></div>
+  <div class="menu-row two"><button class="menu-btn danger" id="clearTodayBtn">Clear Today</button><button class="menu-btn danger" id="resetBtn">Reset All</button></div>
+</div>
+
+<div class="modal" id="allModal"><div class="modal-box"><div class="modal-head"><div class="modal-title">All Badges Cache</div><input id="allSearch" placeholder="Search all badges"><button id="addVisibleBtn">Add visible to shift</button><button id="closeAllBtn">Close</button></div><div class="modal-body"><div class="all-grid" id="allGrid"></div></div></div></div>
+<div class="modal" id="cfgModal"><div class="modal-box"><div class="modal-head"><div class="modal-title">Board Config</div><button id="saveCfgBtn">Save Config</button><button id="closeCfgBtn">Close</button></div><div class="modal-body"><div class="cfg-grid" id="cfgGrid"></div></div></div></div>
+<div class="ctx-menu" id="ctxMenu"><button data-action="note">Edit aisle note</button><button data-action="name">Edit name</button><button data-action="rotate">Rotate badge</button><button data-action="unassign">Move to unassigned</button><button data-action="remove" class="danger">Remove from today</button></div>
+
+<script>
+(() => {
+'use strict';
+const DB_NAME='deployment-board-badges-v6';
+const DB_STORE='badges';
+const LS_STATE='deployment-board-state-v8';
+const LS_CFG='deployment-board-config-v8';
+const STAGE_W=1680, STAGE_H=980;
+let allBadges=[];
+let activeShift='NS1';
+let dragging=null;
+let ctxBadgeId=null;
+let scale=1;
+const stage=document.getElementById('stage');
+const poolList=document.getElementById('poolList');
+const poolCount=document.getElementById('poolCount');
+const poolSearch=document.getElementById('poolSearch');
+const menuPanel=document.getElementById('menuPanel');
+const bulkStatus=document.getElementById('bulkStatus');
+const cfgGrid=document.getElementById('cfgGrid');
+const allGrid=document.getElementById('allGrid');
+const allModal=document.getElementById('allModal');
+const cfgModal=document.getElementById('cfgModal');
+const ctxMenu=document.getElementById('ctxMenu');
+
+const sectionBounds = {
+  TOP_SUPPORT:{x:70,y:70,w:860,h:72},
+  CLUSTERS:{x:48,y:170,w:930,h:700},
+  TOP_RIGHT:{x:1010,y:88,w:560,h:86},
+  INDUCT:{x:980,y:190,w:620,h:560},
+  SPIDERS:{x:1438,y:220,w:150,h:650},
+  BIGS:{x:960,y:748,w:520,h:112},
+  PS_LINES:{x:60,y:892,w:860,h:60},
+  AMB:{x:1216,y:890,w:430,h:60}
+};
+const zones = [
+  {id:'ADTA_A', label:'ADTA - A', section:'TOP_SUPPORT', type:'line', x:142, y:104, w:110, h:10, accepts:['Any']},
+  {id:'AC_DIVERT', label:'A/C DIVERT', section:'TOP_SUPPORT', type:'line', x:304, y:104, w:110, h:10, accepts:['Any']},
+  {id:'ADTA_B', label:'ADTA - B', section:'TOP_SUPPORT', type:'line', x:480, y:104, w:110, h:10, accepts:['Any']},
+  {id:'UNBLOCKER', label:'UNBLOCKER', section:'TOP_SUPPORT', type:'line', x:642, y:104, w:110, h:10, accepts:['Any']},
+  {id:'BD_DIVERT', label:'B/D DIVERT', section:'TOP_SUPPORT', type:'line', x:802, y:104, w:110, h:10, accepts:['Any']},
+  {id:'A_LEFT', label:'A Left', section:'CLUSTERS', type:'vline', x:86, y:246, w:14, h:560, accepts:['Any'], range:'1-26'},
+  {id:'A_RIGHT', label:'A Right', section:'CLUSTERS', type:'vline', x:297, y:246, w:14, h:560, accepts:['Any'], range:'27-52'},
+  {id:'B_LEFT', label:'B Left', section:'CLUSTERS', type:'vline', x:426, y:246, w:14, h:560, accepts:['Any'], range:'1-26'},
+  {id:'B_RIGHT', label:'B Right', section:'CLUSTERS', type:'vline', x:642, y:246, w:14, h:560, accepts:['Any'], range:'27-52'},
+  {id:'C_STOW', label:'C Stow', section:'CLUSTERS', type:'vline', x:732, y:246, w:14, h:560, accepts:['Any'], range:'1-28'},
+  {id:'C_PICK', label:'C Pick', section:'CLUSTERS', type:'vline', x:792, y:246, w:14, h:560, accepts:['Any'], range:'1-28'},
+  {id:'D_PICK', label:'D Pick', section:'CLUSTERS', type:'vline', x:885, y:246, w:14, h:560, accepts:['Any'], range:'29-56'},
+  {id:'D_STOW', label:'D Stow', section:'CLUSTERS', type:'vline', x:946, y:246, w:14, h:560, accepts:['Any'], range:'29-56'},
+  {id:'MGR', label:'MGR', section:'TOP_RIGHT', type:'line', x:1090, y:101, w:110, h:12, accepts:['Any']},
+  {id:'SUP', label:'SUP', section:'TOP_RIGHT', type:'line', x:1276, y:101, w:286, h:12, accepts:['Any']},
+  {id:'PS_INDUCT', label:'PS INDUCT', section:'INDUCT', type:'line', x:1090, y:226, w:320, h:13, accepts:['Any']},
+  {id:'IN1', label:'IN1', section:'INDUCT', type:'line', x:1090, y:316, w:320, h:13, accepts:['Any']},
+  {id:'FLEXI', label:'FLEXI', section:'INDUCT', type:'line', x:1090, y:376, w:320, h:13, accepts:['Any']},
+  {id:'ASL1', label:'ASL1', section:'INDUCT', type:'line', x:1090, y:436, w:320, h:13, accepts:['Any']},
+  {id:'ASL2', label:'ASL2', section:'INDUCT', type:'line', x:1090, y:496, w:320, h:13, accepts:['Any']},
+  {id:'IN2', label:'IN2', section:'INDUCT', type:'line', x:1090, y:556, w:320, h:13, accepts:['Any']},
+  {id:'IN3', label:'IN3', section:'INDUCT', type:'line', x:1090, y:616, w:320, h:13, accepts:['Any']},
+  {id:'IN4', label:'IN4', section:'INDUCT', type:'line', x:1090, y:676, w:320, h:13, accepts:['Any']},
+  {id:'IN5', label:'IN5', section:'INDUCT', type:'line', x:1090, y:736, w:320, h:13, accepts:['Any']},
+  {id:'WATER_SPIDER', label:'WATER SPIDER', section:'SPIDERS', type:'vline', x:1478, y:304, w:14, h:416, accepts:['Any']},
+  {id:'YARD_MARSHAL', label:'YARD MARSHAL', section:'SPIDERS', type:'vline', x:1550, y:304, w:14, h:416, accepts:['Any']},
+  {id:'SORT_BIGS', label:'SORT BIGS', section:'BIGS', type:'line', x:1038, y:772, w:420, h:13, accepts:['Any']},
+  {id:'STOW_BIGS', label:'STOW BIGS', section:'BIGS', type:'line', x:1038, y:833, w:420, h:13, accepts:['Any']},
+  {id:'PS_LINES', label:'PROBLEM SOLVE LINES', section:'PS_LINES', type:'line', x:70, y:930, w:820, h:10, accepts:['Any']},
+  {id:'AMB', label:'AMB', section:'AMB', type:'line', x:1265, y:930, w:350, h:13, accepts:['Any']}
+];
+const defaultConfig = Object.fromEntries(zones.filter(z=>z.type!=='line' || ['A_LEFT','A_RIGHT','B_LEFT','B_RIGHT','C_STOW','C_PICK','D_PICK','D_STOW'].includes(z.id)).map(z=>[z.id,{enabled:true,label:z.label,range:z.range||''}]));
+let config=loadConfig();
+let state=loadState();
+function loadState(){try{const s=JSON.parse(localStorage.getItem(LS_STATE)||'{}'); return {nextId:s.nextId||1,badges:Array.isArray(s.badges)?s.badges:[]};}catch{return {nextId:1,badges:[]};}}
+function save(){localStorage.setItem(LS_STATE,JSON.stringify(state));}
+function loadConfig(){try{return {...defaultConfig,...JSON.parse(localStorage.getItem(LS_CFG)||'{}')};}catch{return {...defaultConfig};}}
+function saveConfig(){localStorage.setItem(LS_CFG,JSON.stringify(config));}
+function init(){renderStageBase(); bind(); render(); refreshAll(); fitStage(); window.addEventListener('resize',fitStage);} 
+function renderStageBase(){
+  const html=[];
+  html.push('<div class="board-title">DIGITAL DEPLOYMENT BOARD</div>');
+  topLabel(html,'ADTA - A',118,76,72,22); topLabel(html,'A/C<br>DIVERT',300,76,72,22); topLabel(html,'ADTA - B',470,76,72,22); topLabel(html,'UNBLOCKER',622,76,84,22); topLabel(html,'B/D<br>DIVERT',780,76,72,22);
+  topLabel(html,'MGR',1036,94,72,24); topLabel(html,'SUP',1280,94,72,24); topLabel(html,'PS INDUCT',1000,212,74,24); topLabel(html,'WATER<br>SPIDER',1448,244,50,50); topLabel(html,'YARD<br>MARSHAL',1522,244,58,50);
+  addTrack(html,'ADTA_A','horizontal black',118,118,112,10); addTrack(html,'AC_DIVERT','horizontal black',294,118,112,10); addTrack(html,'ADTA_B','horizontal black',468,118,112,10); addTrack(html,'UNBLOCKER','horizontal black',632,118,112,10); addTrack(html,'BD_DIVERT','horizontal black',795,118,112,10);
+  miniA(html,60,160,'A','a'); miniA(html,375,160,'B','b'); miniCD(html,675,160);
+  addTrack(html,'A_LEFT','vertical yellow',86,246,14,560); addTrack(html,'A_RIGHT','vertical yellow',297,246,14,560); addTrack(html,'B_LEFT','vertical green',426,246,14,560); addTrack(html,'B_RIGHT','vertical green',642,246,14,560); addTrack(html,'C_STOW','vertical blue',732,246,14,560); addTrack(html,'C_PICK','vertical blue',792,246,14,560); addTrack(html,'D_PICK','vertical blue',885,246,14,560); addTrack(html,'D_STOW','vertical blue',946,246,14,560);
+  vName(html,'CLUSTER A',230,405); vName(html,'CLUSTER A',390,405); vName(html,'CLUSTER B',535,405); vName(html,'CLUSTER C',726,405); vName(html,'CLUSTER C',782,405); vName(html,'CLUSTER D',918,405);
+  addTrack(html,'MGR','horizontal black',1130,107,110,12); addTrack(html,'SUP','horizontal black',1360,107,290,12);
+  lineRow(html,'PS_INDUCT','PS INDUCT',1010,226,332,13); lineRow(html,'IN1','IN1',1020,316,332,13); lineRow(html,'FLEXI','FLEXI',1020,376,332,13); lineRow(html,'ASL1','ASL1',1020,436,332,13); lineRow(html,'ASL2','ASL2',1020,496,332,13); lineRow(html,'IN2','IN2',1020,556,332,13); lineRow(html,'IN3','IN3',1020,616,332,13); lineRow(html,'IN4','IN4',1020,676,332,13); lineRow(html,'IN5','IN5',1020,736,332,13);
+  lineRow(html,'SORT_BIGS','SORT<br>BIGS',972,772,430,13,54,44); lineRow(html,'STOW_BIGS','STOW<br>BIGS',972,833,430,13,54,44);
+  addTrack(html,'WATER_SPIDER','vertical black',1478,304,14,416); addTrack(html,'YARD_MARSHAL','vertical black',1550,304,14,416);
+  topLabel(html,'PROBLEM SOLVE LINES',70,902,130,24); addTrack(html,'PS_LINES','horizontal black',70,930,820,10); topLabel(html,'AMB',1230,914,54,22); addTrack(html,'AMB','horizontal black',1285,930,350,13);
+  zones.forEach(z=>{
+    const dz = dropZoneRect(z);
+    html.push(`<div class="drop-zone" data-zone="${z.id}" style="left:${dz.x}px;top:${dz.y}px;width:${dz.w}px;height:${dz.h}px"></div>`);
+  });
+  stage.innerHTML=html.join('');
+}
+function topLabel(a,text,x,y,w,h){a.push(`<div class="box-label" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">${text}</div>`);}
+function addTrack(a,id,cls,x,y,w,h){a.push(`<div class="track ${cls}" data-track="${id}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"></div>`);}
+function vName(a,text,x,y){a.push(`<div class="vert-name" style="left:${x}px;top:${y}px">${text}</div>`);}
+function lineRow(a,id,label,x,y,w,h,lw=54,lh=26){topLabel(a,label,x-72,y-8,lw,lh); addTrack(a,id,'horizontal black',x,y,w,h);}
+function miniA(a,x,y,letter,cls){a.push(`<div class="mini-table" style="left:${x}px;top:${y}px;width:300px;height:54px"><div>AISLES OPEN</div><div>TYPABLE</div><div class="big ${cls}" style="grid-row:1/4;grid-column:3">${letter}</div><div>TYPABLE</div><div>AISLES OPEN</div><div>VOLUME</div><div>TYPABLE</div><div>TYPABLE</div><div>VOLUME</div><div style="grid-column:1/3">STOWER</div><div class="${cls==='a'?'orange':'greenText'} small">ADTA</div><div style="grid-column:4/6">STOWER</div></div>`);}
+function miniCD(a,x,y){a.push(`<div class="mini-table" style="left:${x}px;top:${y}px;width:300px;height:54px"><div>VOLUME</div><div>TYPABLE</div><div class="cd" style="grid-row:1/4;grid-column:3">C/D<br><span class="small">MANUAL</span></div><div>TYPABLE</div><div>AISLES OPEN</div><div>VOLUME</div><div>TYPABLE</div><div>TYPABLE</div><div>VOLUME</div><div>STOWER</div><div>PICKER</div><div>PICKER</div><div>STOWER</div></div>`);}
+function sectionForZone(z){ return sectionBounds[z.section] || {x:0,y:0,w:STAGE_W,h:STAGE_H}; }
+function clipRect(rect,bounds){
+  const x=Math.max(rect.x,bounds.x), y=Math.max(rect.y,bounds.y);
+  const r=Math.min(rect.x+rect.w,bounds.x+bounds.w), bt=Math.min(rect.y+rect.h,bounds.y+bounds.h);
+  return {x, y, w:Math.max(10,r-x), h:Math.max(10,bt-y)};
+}
+function dropZoneRect(z){
+  const bounds = sectionForZone(z);
+  let rect;
+  if(z.type==='vline'){
+    rect = {x:z.x-18, y:z.y-6, w:50, h:z.h+12};
+  }else if(['ADTA_A','AC_DIVERT','ADTA_B','UNBLOCKER','BD_DIVERT','MGR','SUP'].includes(z.id)){
+    rect = {x:z.x-10, y:bounds.y, w:Math.max(z.w+20,84), h:bounds.h};
+  }else if(['PS_LINES','AMB','SORT_BIGS','STOW_BIGS'].includes(z.id)){
+    rect = {x:z.x-8, y:z.y-76, w:z.w+16, h:96};
+  }else{
+    rect = {x:z.x-8, y:z.y-76, w:z.w+16, h:96};
+  }
+  return clipRect(rect,bounds);
+}
+
+function bind(){
+  document.getElementById('menuButton').onclick=()=>menuPanel.classList.toggle('open');
+  document.getElementById('collapsePoolBtn').onclick=()=>{document.getElementById('app').classList.add('pool-collapsed'); setTimeout(fitStage,60);};
+  document.getElementById('restorePoolBtn').onclick=()=>{document.getElementById('app').classList.remove('pool-collapsed'); setTimeout(fitStage,60);};
+  document.querySelector('.side-title').ondblclick=()=>{document.getElementById('app').classList.add('pool-collapsed'); setTimeout(fitStage,60);};
+  document.getElementById('importBadgeBtn').onclick=()=>document.getElementById('badgeFileInput').click();
+  document.getElementById('badgeFileInput').onchange=importBadgeImages;
+  document.getElementById('openAllBtn').onclick=openAllBadges;
+  document.getElementById('closeAllBtn').onclick=()=>allModal.classList.remove('open');
+  document.getElementById('allSearch').oninput=renderAllGrid;
+  document.getElementById('addVisibleBtn').onclick=addVisibleAllToShift;
+  document.getElementById('configBtn').onclick=openConfig;
+  document.getElementById('closeCfgBtn').onclick=()=>cfgModal.classList.remove('open');
+  document.getElementById('saveCfgBtn').onclick=saveConfigModal;
+  document.getElementById('bulkAddBtn').onclick=bulkAdd;
+  document.getElementById('exportPngBtn').onclick=exportBoardPng;
+  document.getElementById('saveJsonBtn').onclick=exportJson;
+  document.getElementById('loadJsonBtn').onclick=()=>document.getElementById('jsonInput').click();
+  document.getElementById('jsonInput').onchange=importJson;
+  document.getElementById('clearTodayBtn').onclick=()=>{if(confirm('Clear today board and unassigned pools?')){state.badges=[];save();render();}};
+  document.getElementById('resetBtn').onclick=()=>{if(confirm('Reset everything? All cached badge images will stay.')){localStorage.removeItem(LS_STATE);localStorage.removeItem(LS_CFG);state=loadState();config=loadConfig();render();}};
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{activeShift=t.dataset.shift;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));renderPool();});
+  poolSearch.oninput=renderPool;
+  ctxMenu.querySelectorAll('button').forEach(b=>b.onclick=()=>handleCtx(b.dataset.action));
+  document.addEventListener('click',e=>{if(!e.target.closest('.ctx-menu')) closeCtx();});
+}
+function fitStage(){ const shell=document.getElementById('boardShell'); const r=shell.getBoundingClientRect(); const sx=r.width/STAGE_W; const sy=r.height/STAGE_H; scale=Math.min(sx,sy,1); stage.style.transformOrigin='top left'; stage.style.transform=`scale(${scale})`; stage.style.width=(STAGE_W*scale)+'px'; stage.style.height=(STAGE_H*scale)+'px'; shell.scrollLeft=0; shell.scrollTop=0; }
+function render(){ renderPool(); renderBoardBadges(); applyCoverage(); save(); }
+function renderPool(){
+  const q=(poolSearch.value||'').toLowerCase().trim();
+  const list=state.badges.filter(b=>b.location==='pool'&&b.shift===activeShift&&(!q||(b.name||'').toLowerCase().includes(q)||(b.fileName||'').toLowerCase().includes(q)));
+  poolCount.textContent=list.length+' badges'; poolList.innerHTML='';
+  const slotCount=Math.max(8,list.length+2);
+  for(let i=0;i<slotCount;i++){const slot=document.createElement('div'); slot.className='pool-slot'; slot.dataset.poolSlot='1'; if(list[i]) slot.appendChild(makeBadgeEl(list[i],true)); poolList.appendChild(slot);} attachPoolDrop(); attachBadgeEvents();
+}
+function renderBoardBadges(){ stage.querySelectorAll('.badge').forEach(b=>b.remove()); state.badges.filter(b=>b.location==='board').forEach(b=>stage.appendChild(makeBadgeEl(b,false))); attachBadgeEvents(); }
+function makeBadgeEl(b,pool){ const el=document.createElement('div'); el.className='badge'+(pool?' pool-badge':'')+(!b.note?' note-empty':''); el.dataset.id=b.id; el.draggable=false; if(!pool){el.style.left=b.x+'px';el.style.top=b.y+'px';el.style.transform=`rotate(${b.rotation||0}deg)`;} el.innerHTML=b.image?`<img src="${b.image}" alt="">`:`<div class="placeholder"><div class="ph-user">${escapeHtml(b.name||'Associate')}</div><div class="ph-name">${escapeHtml(shortName(b.name||'Associate'))}</div><div class="ph-code"></div></div>`; const note=document.createElement('div'); note.className='badge-note'; note.contentEditable='true'; note.spellcheck=false; note.textContent=b.note||''; note.addEventListener('pointerdown',e=>e.stopPropagation()); note.addEventListener('input',()=>{b.note=note.textContent.trim(); el.classList.toggle('note-empty',!b.note); applyCoverage(); save();}); note.addEventListener('blur',()=>render()); el.appendChild(note); return el; }
+function attachBadgeEvents(){ document.querySelectorAll('.badge').forEach(el=>{ if(el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('pointerdown',pointerDown); el.addEventListener('contextmenu',e=>{e.preventDefault(); ctxBadgeId=el.dataset.id; ctxMenu.style.left=e.clientX+'px';ctxMenu.style.top=e.clientY+'px';ctxMenu.classList.add('open');}); }); }
+function pointerDown(e){ if(e.target.classList.contains('badge-note'))return; const id=e.currentTarget.dataset.id; const b=state.badges.find(x=>x.id===id); if(!b)return; e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); const p=toStage(e); dragging={badge:b,el:e.currentTarget,dx:p.x-(b.location==='board'?b.x:30),dy:p.y-(b.location==='board'?b.y:30),from:b.location}; if(b.location==='pool'){b.location='board'; b.x=p.x-29; b.y=p.y-43; renderPool(); stage.appendChild(e.currentTarget); e.currentTarget.classList.remove('pool-badge'); e.currentTarget.style.left=b.x+'px'; e.currentTarget.style.top=b.y+'px'; e.currentTarget.style.transform=`rotate(${b.rotation||0}deg)`;} e.currentTarget.classList.add('dragging'); window.addEventListener('pointermove',pointerMove); window.addEventListener('pointerup',pointerUp,{once:true}); }
+function pointerMove(e){ if(!dragging)return; const p=toStage(e); dragging.badge.x=clamp(p.x-dragging.dx,0,STAGE_W-52); dragging.badge.y=clamp(p.y-dragging.dy,0,STAGE_H-72); dragging.el.style.left=dragging.badge.x+'px'; dragging.el.style.top=dragging.badge.y+'px'; updateHover(dragging.badge); }
+function pointerUp(e){ if(!dragging)return; window.removeEventListener('pointermove',pointerMove); const b=dragging.badge; const cx=b.x+22, cy=b.y+33; const zone=getZoneAt(cx,cy); const poolHit=getPoolSlotAt(e.clientX,e.clientY); if(poolHit){b.location='pool';b.shift=activeShift;b.zone='';b.x=30;b.y=30;} else if(zone){b.location='board';b.zone=zone.dataset.zone; snapBadge(b,zone.dataset.zone);} dragging.el.classList.remove('dragging'); dragging=null; clearHover(); render(); }
+function toStage(e){const r=stage.getBoundingClientRect();return{x:(e.clientX-r.left)/scale,y:(e.clientY-r.top)/scale};}
+function getZoneAt(x,y){
+  const hits=Array.from(stage.querySelectorAll('.drop-zone')).filter(z=>{
+    const l=parseFloat(z.style.left),t=parseFloat(z.style.top),w=parseFloat(z.style.width),h=parseFloat(z.style.height);
+    return x>=l&&x<=l+w&&y>=t&&y<=t+h&&!z.classList.contains('disabled');
+  });
+  if(!hits.length)return null;
+  hits.sort((a,b)=>zoneDistance(a,x,y)-zoneDistance(b,x,y));
+  return hits[0];
+}
+function zoneDistance(el,x,y){
+  const id=el.dataset.zone; const z=zones.find(item=>item.id===id); if(!z)return 999999;
+  const cx=z.x+z.w/2, cy=z.y+z.h/2;
+  if(z.type==='vline') return Math.abs(x-cx)*4 + Math.max(0,Math.abs(y-cy)-z.h/2);
+  return Math.abs(y-cy)*4 + Math.max(0,Math.abs(x-cx)-z.w/2);
+}
+function updateHover(b){clearHover(); const z=getZoneAt(b.x+22,b.y+33); if(z)z.classList.add('hover');}
+function clearHover(){document.querySelectorAll('.drop-zone.hover,.pool-slot.hover').forEach(z=>z.classList.remove('hover'));}
+function getPoolSlotAt(x,y){return Array.from(document.querySelectorAll('.pool-slot')).find(s=>{const r=s.getBoundingClientRect(); return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;});}
+function attachPoolDrop(){ poolList.querySelectorAll('.pool-slot').forEach(slot=>{slot.onpointerenter=()=>slot.classList.add('hover');slot.onpointerleave=()=>slot.classList.remove('hover');});}
+function snapBadge(b,zoneId){
+  const z=zones.find(x=>x.id===zoneId);
+  if(!z)return;
+
+  const BW=52, BH=72;
+  const bounds = sectionForZone(z);
+  const siblings=state.badges
+    .filter(x=>x.location==='board'&&x.zone===zoneId&&x.id!==b.id)
+    .sort((a,b)=>(a.slotIndex??0)-(b.slotIndex??0));
+  const occupied=new Set(siblings.map(x=>x.slotIndex).filter(v=>v!==undefined));
+  let idx=0; while(occupied.has(idx))idx++; b.slotIndex=idx;
+
+  const sideBySideZones=new Set(['MGR','SUP','PS_INDUCT','PS_LINES','ADTA_A','ADTA_B','AC_DIVERT','BD_DIVERT','UNBLOCKER','SORT_BIGS','STOW_BIGS','AMB']);
+
+  if(z.type==='vline'){
+    const maxSlots=10;
+    const usableTop = Math.max(bounds.y+6, z.y+2);
+    const usableBottom = Math.min(bounds.y+bounds.h-BH-6, z.y+z.h-BH-2);
+    const step = Math.max(2, Math.floor((usableBottom-usableTop)/Math.max(1,maxSlots-1)));
+    const cappedIdx=Math.min(idx,maxSlots-1);
+    b.x=snap(z.x+(z.w/2)-(BW/2),2);
+    b.y=snap(usableTop+(cappedIdx*step),2);
+  }else if(sideBySideZones.has(z.id)){
+    const topBase = Math.max(bounds.y+4, z.y-BH-10);
+    const leftBase = Math.max(bounds.x+4, z.x);
+    const rightLimit = Math.min(bounds.x+bounds.w-4, z.x+z.w);
+    const gapX=10, gapY=10;
+    const perRow=Math.max(1,Math.floor((rightLimit-leftBase)/(BW+gapX)));
+    b.x=snap(leftBase+(idx%perRow)*(BW+gapX),2);
+    b.y=snap(topBase+Math.floor(idx/perRow)*(BH+gapY),2);
+  }else{
+    const maxSlots=10;
+    const usableLeft = Math.max(bounds.x+4, z.x);
+    const usableTop = Math.max(bounds.y+6, z.y-BH-10);
+    const usableBottom = Math.min(bounds.y+bounds.h-BH-6, z.y+12);
+    const step = Math.max(2, Math.floor((usableBottom-usableTop)/Math.max(1,maxSlots-1)));
+    const cappedIdx=Math.min(idx,maxSlots-1);
+    b.x=snap(usableLeft,2);
+    b.y=snap(usableTop+(cappedIdx*step),2);
+  }
+
+  b.x=clamp(b.x,bounds.x,Math.min(bounds.x+bounds.w-BW,STAGE_W-BW));
+  b.y=clamp(b.y,bounds.y,Math.min(bounds.y+bounds.h-BH,STAGE_H-BH));
+}
+
+function snap(v,grid=4){return Math.round(v/grid)*grid;}
+async function refreshAll(){allBadges=await dbAll();}
+async function importBadgeImages(){const input=document.getElementById('badgeFileInput'); const files=Array.from(input.files||[]); for(const f of files){const image=await readFile(f); const rec={id:'ALL_'+Date.now()+'_'+Math.random().toString(16).slice(2),name:cleanName(f.name),fileName:f.name,image,keys:makeKeys(cleanName(f.name),f.name)}; await dbPut(rec);} input.value=''; await refreshAll(); openAllBadges();}
+function openAllBadges(){refreshAll().then(()=>{renderAllGrid();allModal.classList.add('open');});}
+function renderAllGrid(){const q=(document.getElementById('allSearch').value||'').toLowerCase().trim(); allGrid.innerHTML=''; allBadges.filter(b=>!q||searchText(b).includes(q)).forEach(b=>{const c=document.createElement('div');c.className='all-card';c.innerHTML=`<img src="${b.image}"><div class="all-name" title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</div><button>Add to ${activeShift}</button><button class="remove">Delete</button>`; c.querySelector('button').onclick=()=>addMasterToShift(b,activeShift); c.querySelector('.remove').onclick=async()=>{if(confirm('Delete this badge from All Badges cache?')){await dbDelete(b.id);await refreshAll();renderAllGrid();}}; allGrid.appendChild(c);});}
+function addVisibleAllToShift(){const q=(document.getElementById('allSearch').value||'').toLowerCase().trim(); allBadges.filter(b=>!q||searchText(b).includes(q)).forEach(b=>addMasterToShift(b,activeShift,false)); render();}
+function addMasterToShift(master,shift=activeShift,rerender=true){ if(state.badges.some(b=>b.masterId===master.id&&b.shift===shift))return; state.badges.push({id:'B'+state.nextId++,masterId:master.id,name:master.name,fileName:master.fileName,image:master.image,note:'',location:'pool',shift,zone:'',x:30,y:30,rotation:0}); if(rerender)render(); }
+function bulkAdd(){const shift=document.getElementById('bulkShift').value; const lines=document.getElementById('bulkPaste').value.split(/\n+/).map(s=>s.trim()).filter(Boolean); const added=[],missing=[],dupes=[]; lines.forEach(line=>{const m=findMaster(line); if(!m){missing.push(line);return;} if(state.badges.some(b=>b.masterId===m.id&&b.shift===shift)){dupes.push(line);return;} addMasterToShift(m,shift,false); added.push(m.name);}); activeShift=shift; document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.shift===shift)); render(); let msg=`Added ${added.length}. Missing ${missing.length}. Duplicate ${dupes.length}.`; if(missing.length)msg+='\n\nMissing:\n'+missing.join('\n'); if(dupes.length)msg+='\n\nAlready in '+shift+':\n'+dupes.join('\n'); bulkStatus.textContent=msg;}
+function findMaster(input){const candidates=keysForInput(input); let scored=[]; for(const b of allBadges){const keys=b.keys||makeKeys(b.name,b.fileName); let score=0; for(const c of candidates){if(keys.includes(c))score=Math.max(score,100); else if(keys.some(k=>k.includes(c)||c.includes(k)))score=Math.max(score,80); else {const toks=c.split(' ').filter(Boolean); const full=(keys.join(' ')); if(toks.length>=2&&toks.every(t=>full.includes(t)))score=Math.max(score,65);}} if(score)scored.push({b,score});} scored.sort((a,b)=>b.score-a.score||a.b.name.localeCompare(b.b.name)); return scored[0]?.b||null;}
+function makeKeys(name,fileName){return [...new Set([...keysForInput(name),...keysForInput(fileName||'')])];}
+function keysForInput(s){s=String(s||'').replace(/\.[a-z0-9]+$/i,''); const raw=s; const n=norm(raw); const out=[n]; if(raw.includes(',')){const parts=raw.split(',').map(x=>x.trim()).filter(Boolean); if(parts.length>=2){out.push(norm(parts[1]+' '+parts[0])); out.push(norm(parts[0]+' '+parts[1]));}} const toks=n.split(' ').filter(t=>t.length>1); if(toks.length>=2){out.push(toks[0]+' '+toks[toks.length-1]); out.push(toks[toks.length-1]+' '+toks[0]);} if(toks.length===1)out.push(toks[0]); return [...new Set(out.filter(Boolean))];}
+function norm(s){return String(s||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').replace(/\b(employee|associate|badge|png|jpg|jpeg|webp|copy)\b/g,' ').replace(/\s+/g,' ').trim();}
+function searchText(b){return norm([b.name,b.fileName,(b.keys||[]).join(' ')].join(' '));}
+function cleanName(n){return String(n||'Badge').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();}
+function applyCoverage(){ stage.querySelectorAll('.track').forEach(t=>t.classList.remove('missing','covered')); stage.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('disabled')); stage.querySelectorAll('.cover-chip').forEach(c=>c.remove()); Object.keys(config).forEach(id=>{const c=config[id]; const dz=stage.querySelector(`.drop-zone[data-zone="${escAttr(id)}"]`); if(dz)dz.classList.toggle('disabled',!c.enabled); const tr=stage.querySelector(`.track[data-track="${escAttr(id)}"]`); if(!tr||!c.enabled)return; const range=(c.range||'').trim(); if(!range)return; const gaps=coverageGaps(id,range); if(gaps.length){tr.classList.add('missing'); addCoverChip(id,'Missing '+gaps.join(', '),'missing');} else {tr.classList.add('covered'); addCoverChip(id,'Covered','covered');}});}
+function coverageGaps(zone,rangeText){const active=parseRanges(rangeText); if(active.size===0)return []; const covered=new Set(); state.badges.filter(b=>b.location==='board'&&b.zone===zone).forEach(b=>parseRanges(b.note||'').forEach(n=>covered.add(n))); const gaps=[]; let start=null,prev=null; [...active].sort((a,b)=>a-b).forEach(n=>{if(covered.has(n)){if(start!==null){gaps.push(start===prev?String(start):`${start}-${prev}`);start=null;prev=null;}return;} if(start===null){start=n;prev=n;} else if(n===prev+1){prev=n;} else {gaps.push(start===prev?String(start):`${start}-${prev}`);start=n;prev=n;}}); if(start!==null)gaps.push(start===prev?String(start):`${start}-${prev}`); return gaps;}
+function parseRanges(text){const set=new Set(); const re=/(\d+)\s*(?:to|-|–|—)\s*(\d+)|(\d+)/gi; let m; while((m=re.exec(String(text||'')))){if(m[1]&&m[2]){let a=+m[1],b=+m[2]; if(a>b)[a,b]=[b,a]; for(let i=a;i<=b;i++)set.add(i);} else if(m[3]) set.add(+m[3]);} return set;}
+function addCoverChip(zoneId,text,type){
+  const z=zones.find(z=>z.id===zoneId); if(!z)return;
+  const chip=document.createElement('div'); chip.className='cover-chip '+type; chip.title=text; chip.textContent=text;
+  if(z.type==='vline'){
+    const stagger = (['A_RIGHT','B_RIGHT','C_PICK','D_STOW'].includes(zoneId)) ? 10 : 0;
+    chip.style.left=(z.x-28)+'px';
+    chip.style.top=(z.y-10+stagger)+'px';
+  }else{
+    chip.style.left=(z.x+4)+'px';
+    chip.style.top=(z.y-20)+'px';
+  }
+  stage.appendChild(chip);
+}
+function openConfig(){cfgGrid.innerHTML=''; Object.keys(config).forEach(id=>{const c=config[id]; const card=document.createElement('div');card.className='cfg-card';card.innerHTML=`<div class="cfg-title">${escapeHtml(c.label||id)}</div><label><input type="checkbox" data-id="${escapeHtml(id)}" data-field="enabled" ${c.enabled?'checked':''}> Area in use</label><label>Active range</label><input type="text" data-id="${escapeHtml(id)}" data-field="range" value="${escapeHtml(c.range||'')}" placeholder="Example: 1-26">`; cfgGrid.appendChild(card);}); cfgModal.classList.add('open');}
+function saveConfigModal(){cfgGrid.querySelectorAll('[data-id]').forEach(inp=>{const id=inp.dataset.id; if(!config[id])config[id]={enabled:true,label:id,range:''}; if(inp.dataset.field==='enabled')config[id].enabled=inp.checked; if(inp.dataset.field==='range')config[id].range=inp.value.trim();}); saveConfig(); cfgModal.classList.remove('open'); render();}
+function handleCtx(action){const b=state.badges.find(x=>x.id===ctxBadgeId); if(!b)return; if(action==='note')editNote(b); if(action==='name'){const n=prompt('Badge name',b.name||''); if(n!==null&&n.trim())b.name=n.trim();} if(action==='rotate'){b.rotation=((+b.rotation||0)+90)%360;} if(action==='unassign'){b.location='pool';b.shift=activeShift;b.zone='';b.slotIndex=undefined;} if(action==='remove'){state.badges=state.badges.filter(x=>x.id!==b.id);} closeCtx(); render();}
+function editNote(b){const n=prompt('Aisle range or note',b.note||''); if(n!==null)b.note=n.trim();}
+function closeCtx(){ctxMenu.classList.remove('open');ctxBadgeId=null;}
+async function exportBoardPng(){ menuPanel.classList.remove('open'); closeCtx(); document.body.classList.add('exporting'); const clone=stage.cloneNode(true); clone.querySelectorAll('.drop-zone,.cover-chip').forEach(el=>el.remove()); clone.style.transform='none'; clone.style.position='relative'; clone.style.left='0'; clone.style.top='0'; const styles=document.querySelector('style').textContent; const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${STAGE_W}" height="${STAGE_H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${styles}</style>${clone.outerHTML}</div></foreignObject></svg>`; const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'})); const img=new Image(); img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=STAGE_W;canvas.height=STAGE_H;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,STAGE_W,STAGE_H);ctx.drawImage(img,0,0);URL.revokeObjectURL(url);canvas.toBlob(blob=>downloadBlob(blob,'deployment-board.png'));document.body.classList.remove('exporting');}; img.onerror=()=>{document.body.classList.remove('exporting');URL.revokeObjectURL(url);alert('Export failed. Try again after badges finish loading.');}; img.src=url;}
+function exportJson(){downloadBlob(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'deployment-board-today.json');}
+async function importJson(){const input=document.getElementById('jsonInput'); const f=input.files&&input.files[0]; if(!f)return; try{state=JSON.parse(await f.text()); if(!Array.isArray(state.badges))throw new Error('bad'); save(); render();}catch{alert('Invalid JSON');} input.value='';}
+function readFile(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f);});}
+function downloadBlob(blob,name){const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);}
+function shortName(name){const p=String(name||'').trim().split(/\s+/); if(p.length===1)return p[0].slice(0,8); return (p[0][0]+p[p.length-1][0]).toUpperCase();}
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function escAttr(s){return String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"');}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+async function openDB(){return new Promise(res=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:'id'});};r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);});}
+async function dbAll(){const db=await openDB(); if(!db)return []; return new Promise(res=>{const tx=db.transaction(DB_STORE,'readonly');const req=tx.objectStore(DB_STORE).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>res([]);});}
+async function dbPut(rec){const db=await openDB(); if(!db)return; return new Promise(res=>{const tx=db.transaction(DB_STORE,'readwrite');const req=tx.objectStore(DB_STORE).put(rec);req.onsuccess=()=>res();req.onerror=()=>res();});}
+async function dbDelete(id){const db=await openDB(); if(!db)return; return new Promise(res=>{const tx=db.transaction(DB_STORE,'readwrite');const req=tx.objectStore(DB_STORE).delete(id);req.onsuccess=()=>res();req.onerror=()=>res();});}
+init();
+})();
+</script>
+</body>
+</html>
